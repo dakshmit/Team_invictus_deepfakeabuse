@@ -42,6 +42,7 @@ export const report = {
     getAll: () => api.get('/report'),
     getById: (id: string) => api.get(`/report/${id}`),
     submit: (id: string) => api.put(`/report/${id}/submit`),
+    submitComplaintDocument: (id: string, base64Data: string) => api.post(`/report/${id}/complaint-document`, { base64Data }),
 };
 
 export const ai = {
@@ -51,8 +52,8 @@ export const ai = {
 
 export const intelligence = {
     analyze: (metadata: any) => api.post('/intelligence/analyze', { metadata }),
-    detailedAnalysis: (base64Data: string, mimeType: string, reportId?: string) =>
-        api.post('/intelligence/detailed-analysis', { base64Data, mimeType, reportId }),
+    detailedAnalysis: (morphedBase64: string, mimeType: string, reportId?: string, originalBase64?: string) =>
+        api.post('/intelligence/detailed-analysis', { morphedBase64, mimeType, reportId, originalBase64 }),
 };
 
 export default api;

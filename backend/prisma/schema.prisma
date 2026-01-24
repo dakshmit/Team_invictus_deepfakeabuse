@@ -27,8 +27,19 @@ model Report {
   status        ReportStatus    @default(DRAFT)
   createdAt     DateTime        @default(now())
   aiAnalysis    AIAnalysis?
+  complaint     Complaint?
   mediaEvidence MediaEvidence[]
   user          User            @relation(fields: [userId], references: [id])
+}
+
+model Complaint {
+  id           String   @id @default(uuid())
+  reportId     String   @unique
+  content      String
+  suggestedLaw String?
+  pdfPath      String?
+  createdAt    DateTime @default(now())
+  report       Report   @relation(fields: [reportId], references: [id])
 }
 
 model MediaEvidence {

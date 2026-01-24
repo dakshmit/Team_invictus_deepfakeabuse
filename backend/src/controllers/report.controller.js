@@ -1,6 +1,8 @@
 import { prisma } from '../config/db.js';
 import Joi from 'joi';
 import { generateComplaintPDF } from '../services/pdf.service.js';
+import path from 'path';
+import fs from 'fs/promises';
 
 const createReportSchema = Joi.object({
     description: Joi.string().required(),
@@ -87,5 +89,58 @@ export const downloadComplaint = async (req, res) => {
     } catch (error) {
         console.error("PDF Generation Error:", error);
         res.status(500).json({ error: "Failed to generate complaint PDF" });
+    }
+};
+
+/**
+ * Handle direct upload of the complaint document (PDF)
+ */
+export const uploadComplaintDocument = async (req, res) => {
+    try {
+        const { id } = req.params; // reportId
+        const { base64Data } = req.body;
+
+        if (!base64Data) return res.status(400).json({ error: "No document data provided" });
+
+        const buffer = Buffer.from(base64Data, 'base64');
+        const fileName = `complaint_${id}_${Date.now()}.pdf`;
+        const filePath = path.join('uploads', fileName);
+
+        await fs.writeFile(filePath, buffer);
+
+        // Update the Complaint record with the path
+        await prisma.complaint.update({
+            where: { reportId: id },
+            data: { pdfPath: filePath }
+        });
+
+        res.json({ message: "Complaint document successfully submitted to NGO", filePath });
+
+    } catch (error) {
+        console.error("Complaint Upload Error:", error);
+        res.status(500).json({ error: "Failed to submit complaint document" });
+    }
+};
+
+/**
+ * Handle download of the submitted complaint document for NGO
+ */
+export const downloadSubmittedComplaint = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const complaint = await prisma.complaint.findUnique({
+            where: { reportId: id }
+        });
+
+        if (!complaint || !complaint.pdfPath) {
+            return res.status(404).json({ error: "No submitted complaint document found" });
+        }
+
+        const filePath = path.resolve(complaint.pdfPath);
+        res.sendFile(filePath);
+
+    } catch (error) {
+        console.error("Complaint Retrieval Error:", error);
+        res.status(500).json({ error: "Failed to retrieve complaint document" });
     }
 };

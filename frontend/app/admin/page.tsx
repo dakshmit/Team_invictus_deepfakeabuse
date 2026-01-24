@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Shield, Search, Filter, Eye, AlertTriangle, CheckCircle, Clock, ChevronRight, BarChart3, Binary, Lock } from "lucide-react"
+import { Shield, Search, Filter, Eye, AlertTriangle, CheckCircle, Clock, ChevronRight, BarChart3, Binary, Lock, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -128,7 +128,7 @@ export default function AdminPortal() {
                                         <div className="space-y-3">
                                             <div className="flex justify-between items-end">
                                                 <span className="text-sm font-bold text-slate-700 uppercase tracking-widest">Aggregated Confidence</span>
-                                                <span className="text-2xl font-black text-slate-900">{(selectedReport.confidenceScore * 100).toFixed(1)}%</span>
+                                                <span className="text-2xl font-black text-slate-900">{(Number(selectedReport.confidenceScore) * 100).toFixed(1)}%</span>
                                             </div>
                                             <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
                                                 <div
@@ -162,6 +162,51 @@ export default function AdminPortal() {
                                                 ))}
                                             </div>
                                         </div>
+
+                                        {/* Complaint Draft Section */}
+                                        {selectedReport.complaint && (
+                                            <div className="space-y-4 pt-4 border-t border-slate-100">
+                                                <h4 className="flex items-center gap-2 font-bold text-slate-800">
+                                                    <Shield className="h-4 w-4 text-green-600" /> Professional Complaint Draft
+                                                </h4>
+                                                <div className="p-6 bg-green-50/30 rounded-2xl border border-green-100 text-slate-700 leading-relaxed font-medium whitespace-pre-wrap">
+                                                    {selectedReport.complaint.content}
+                                                    {selectedReport.complaint.suggestedLaw && (
+                                                        <div className="mt-4 pt-4 border-t border-green-100 text-xs font-bold text-green-800 uppercase tracking-widest">
+                                                            Suggested Legal Sections: {selectedReport.complaint.suggestedLaw}
+                                                        </div>
+                                                    )}
+                                                    {selectedReport.complaint.pdfPath && (
+                                                        <div className="mt-6">
+                                                            <Button
+                                                                variant="outline"
+                                                                className="w-full bg-white border-green-200 text-green-700 hover:bg-green-50 rounded-xl font-bold h-12 shadow-sm flex gap-2"
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        const token = localStorage.getItem('token');
+                                                                        const response = await axios.get(`http://localhost:5021/api/report/${selectedReport.reportId}/complaint-document`, {
+                                                                            headers: { Authorization: `Bearer ${token}` },
+                                                                            responseType: 'blob'
+                                                                        });
+                                                                        const url = window.URL.createObjectURL(new Blob([response.data]));
+                                                                        const link = document.createElement('a');
+                                                                        link.href = url;
+                                                                        link.setAttribute('download', `submitted-complaint-${selectedReport.reportId.slice(-6)}.pdf`);
+                                                                        document.body.appendChild(link);
+                                                                        link.click();
+                                                                        link.remove();
+                                                                    } catch (err) {
+                                                                        alert("Failed to download the submitted document.");
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Download className="h-4 w-4" /> DOWNLOAD SUBMITTED PDF
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {/* Action Block */}
                                         <div className="pt-6 border-t border-slate-100 flex gap-4">

@@ -40,12 +40,15 @@ export const generateComplaintPDF = async (reportId) => {
         doc.fontSize(10).fillColor(mutedColor).text('(Auto-filled / Optional fields to protect privacy)');
         doc.moveDown(0.5);
         doc.fontSize(11).font('Helvetica').fillColor(accentColor);
-        doc.text(`Name: ${report.user?.name || '[Victim Name / Anonymous ID]'}`);
+
+        const metadata = report.mediaEvidence[0]?.metadata ? JSON.parse(report.mediaEvidence[0].metadata) : {};
+
+        doc.text(`Name: ${metadata.victimName || report.user?.name || '[Victim Name / Anonymous ID]'}`);
         doc.text(`Age: [Age]`);
         doc.text(`Gender: Female`);
         doc.text(`Contact Number: [Optional]`);
         doc.text(`Email ID: ${report.user?.email || '[Optional]'}`);
-        doc.text(`Current Location: [City, State]`);
+        doc.text(`Relationship to Suspect: ${metadata.relationship || 'Not specified'}`);
         doc.moveDown(0.5);
         doc.fontSize(10).font('Helvetica-Oblique').text('Note: The complainant requests confidentiality under applicable laws.');
         doc.moveDown(1.5);
@@ -66,8 +69,10 @@ export const generateComplaintPDF = async (reportId) => {
             { align: 'justify' }
         );
         doc.moveDown(0.5);
+        doc.text(`Description: ${report.description || metadata.description || 'No description provided.'}`);
+        doc.moveDown(0.5);
         doc.text(
-            'These images appear to have been digitally manipulated using artificial intelligence or image editing tools without my knowledge or consent. The content is false, defamatory, and has caused me extreme emotional distress, fear, and reputational harm.',
+            `Impact on Complainant: ${metadata.impactSummary || 'The content is false, defamatory, and has caused me extreme emotional distress, fear, and reputational harm.'}`,
             { align: 'justify' }
         );
         doc.moveDown(1.5);
@@ -75,13 +80,12 @@ export const generateComplaintPDF = async (reportId) => {
         // --- 4. TIMELINE OF EVENTS ---
         doc.fontSize(14).font('Helvetica-Bold').fillColor(titleColor).text('4. Timeline of Events');
         doc.moveDown(0.5);
-        const metadata = report.mediaEvidence[0]?.metadata ? JSON.parse(report.mediaEvidence[0].metadata) : {};
         doc.fontSize(11).font('Helvetica').fillColor(accentColor);
         doc.text(`Date of First Discovery: ${metadata.date || '[DD/MM/YYYY]'}`);
         doc.text(`Approximate Time: [HH:MM AM/PM]`);
         doc.moveDown(0.5);
         doc.font('Helvetica-Bold').text('How the Content Was Discovered:');
-        doc.font('Helvetica').text(' Found on social media platform / Threatened via message (as indicated)');
+        doc.font('Helvetica').text(` Discovered on ${metadata.platform || 'digital platform'} ${metadata.discoveryUrl ? `at ${metadata.discoveryUrl}` : ''}`);
         doc.moveDown(1.5);
 
         // --- 5. PLATFORMS ---

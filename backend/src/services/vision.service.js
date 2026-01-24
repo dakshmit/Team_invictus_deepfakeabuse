@@ -58,34 +58,52 @@ export const analyzeArtifacts = async (metadata) => {
  * Detailed Artifact Analysis using Gemini Vision API
  * This serves as the core intelligence layer for forensics.
  */
-export const analyzeArtifactsWithGemini = async (model, base64Data, mimeType) => {
-    const prompt = `
-        You are a Forensic Image Analyst. Analyze this image for visual artifacts indicative of manipulation.
-        
-        Look for:
-        - Edge Blending & Sharpness Inconsistencies
-        - Lighting & Shadow Discrepancies
-        - Geometric Warping or Distortion
-        - Compression Artifacts & Noise Pattern mismatches
-        - Skin Texture & Facial Feature Alignment
-        
-        JSON RESPONSE FORMAT:
-        {
-            "analysisSummary": "A detailed technical summary of findings.",
-            "confidenceScore": 0.85,
-            "indicators": ["indicator name: detail description", "..."],
-            "complaintDraft": "A professional draft for reporting this incident."
-        }
+export const analyzeArtifactsWithGemini = async (model, morphedBase64, mimeType, originalBase64 = null) => {
+    console.log(`[SERVICE DEBUG] Calling Gemini with ${originalBase64 ? 'TWO' : 'ONE'} images.`);
+    let prompt = `
+        You are a Specialized Forensic Image Authenticity Expert. 
+        Your task is to conduct a technical examination of the provided image(s) to detect digital manipulation, generative AI artifacts, or identity inconsistencies.
     `;
+
+    const parts = [];
+
+    if (originalBase64) {
+        prompt += `
+        MULTI-SIGNAL FORENSIC ANALYSIS:
+        - Signals: 
+            1. Identity Consistency: Compare [SUSPECT] and [REFERENCE] for geometric alignment (nose, jaw, eyes).
+            2. Pixel Integrity: Look for blending artifacts or noise mismatches in [SUSPECT].
+            3. Lighting Logic: Verify if shadow directions and corneal glints match across images.
+        - GOAL: Assess the risk that [SUSPECT] is a manipulated version of [REFERENCE] or a completely different individual.
+        `;
+        parts.push({ text: prompt });
+        parts.push({ inlineData: { data: morphedBase64, mimeType: mimeType || 'image/jpeg' } });
+        parts.push({ inlineData: { data: originalBase64, mimeType: mimeType || 'image/jpeg' } });
+    } else {
+        prompt += `
+        SINGLE-IMAGE ARTIFACT SCAN:
+        - Analyze [SUSPECT] for:
+            - Texture Anomalies: Over-smoothed skin or "checkerboard" pixel patterns.
+            - Edge Artifacts: Unnatural sharpness or blurring around facial boundaries and hairline.
+            - Lighting Mismatch: Shadow orientations that don't align with the environment.
+        - GOAL: Assess the risk of generative AI manipulation or morphing.
+        `;
+        parts.push({ text: prompt });
+        parts.push({ inlineData: { data: morphedBase64, mimeType: mimeType || 'image/jpeg' } });
+    }
+
+    prompt += `
+        Provide a detailed technical analysis and assign a risk level (Low, Medium, High).
+    `;
+
+    // Ensure the last part is the format instruction
+    parts[0].text += `\n\nProvide the response strictly in the JSON format defined in your instructions. If you cannot analyze due to safety, set "safetyRefusal": true.`;
 
     try {
         const result = await model.generateContent({
             contents: [{
                 role: 'user',
-                parts: [
-                    { text: prompt },
-                    { inlineData: { data: base64Data, mimeType: mimeType || 'image/jpeg' } }
-                ]
+                parts: parts
             }],
             generationConfig: {
                 responseMimeType: "application/json",

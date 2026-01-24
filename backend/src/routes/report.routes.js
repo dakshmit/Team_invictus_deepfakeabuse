@@ -1,5 +1,5 @@
 import express from 'express';
-import { createReport, getMyReports, submitReport, getReportById, downloadComplaint } from '../controllers/report.controller.js';
+import { createReport, getMyReports, submitReport, getReportById, downloadComplaint, uploadComplaintDocument, downloadSubmittedComplaint } from '../controllers/report.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -63,6 +63,8 @@ router.get('/', protect, getMyReports);
  */
 router.get('/:id', protect, getReportById);
 router.get('/:id/download', protect, downloadComplaint);
+router.post('/:id/complaint-document', protect, uploadComplaintDocument);
+router.get('/:id/complaint-document', protect, downloadSubmittedComplaint);
 router.put('/:id/submit', protect, submitReport);
 
 export default router;
