@@ -1,136 +1,128 @@
 "use client"
 
-import { useState } from "react"
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { auth } from "@/lib/api"
+import { useRouter } from 'next/navigation'
 import Link from "next/link"
-import { Shield, Mail } from "lucide-react"
+import { Shield, Mail, Lock, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function AuthPage() {
-  const [showEmailForm, setShowEmailForm] = useState(false)
+export default function LoginPage() {
+  const router = useRouter();
+
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    try {
+      const { credential } = credentialResponse;
+      const res = await auth.google(credential as string);
+      const { token, user } = res.data;
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      router.push('/chat');
+    } catch (error) {
+      console.error("Login Failed", error);
+    }
+  };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary">
-            <Shield className="h-8 w-8 text-primary-foreground" />
+    <div className="flex min-h-screen font-sans">
+      {/* LEFT SIDE: Branding Panel */}
+      <div className="hidden lg:flex flex-col w-1/2 bg-primary relative p-16 justify-between overflow-hidden">
+        {/* Abstract Pattern Overlay */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          <div className="absolute top-[-20%] right-[-20%] w-[80%] h-[80%] border-[40px] border-white/20 rounded-full" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] border-[20px] border-white/20 rounded-full" />
+        </div>
+
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-md">
+            <Shield className="h-6 w-6 text-white" />
           </div>
-          <CardTitle className="text-2xl font-semibold text-foreground">
-            Welcome to Digital Dignity
-          </CardTitle>
-          <CardDescription className="text-base text-muted-foreground">
-            A safe space to help you understand and respond to manipulated images.
-          </CardDescription>
-        </CardHeader>
+          <span className="font-heading font-extrabold text-xl tracking-tight text-white uppercase">Digital Dignity</span>
+        </div>
 
-        <CardContent className="space-y-4">
-          {!showEmailForm ? (
-            <>
-              <Button
-                className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                size="lg"
-              >
-                <svg className="h-5 w-5" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                Sign in with Google
-              </Button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">or</span>
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                className="w-full gap-2 bg-transparent"
-                size="lg"
-                onClick={() => setShowEmailForm(true)}
-              >
-                <Mail className="h-5 w-5" />
-                Continue with Email
-              </Button>
-            </>
-          ) : (
-            <form className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="bg-input"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  className="bg-input"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                size="lg"
-              >
-                Sign In
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => setShowEmailForm(false)}
-              >
-                Back to options
-              </Button>
-            </form>
-          )}
-        </CardContent>
-
-        <CardFooter className="flex flex-col gap-4">
-          <Link
-            href="#"
-            className="text-sm text-primary hover:underline"
-          >
-            Forgot password?
-          </Link>
-          <p className="text-center text-xs text-muted-foreground">
-            Your privacy matters. No images are stored.
+        <div className="relative z-10 space-y-6 max-w-lg">
+          <h2 className="font-heading text-4xl xl:text-5xl font-extrabold text-white leading-[1.1]">
+            A safe space to report, understand, and recover.
+          </h2>
+          <p className="text-white/70 text-lg font-medium leading-relaxed">
+            Protecting your digital identity with empathy, privacy, and technical guidance.
+            You're not alone in this journey.
           </p>
-        </CardFooter>
-      </Card>
+        </div>
 
-      <Link
-        href="/"
-        className="mt-6 text-sm text-muted-foreground hover:text-primary"
-      >
-        Back to home
-      </Link>
-    </main>
+        <div className="relative z-10">
+          <p className="text-white/40 text-xs font-bold uppercase tracking-[0.2em]">
+            Private • Secure • Judgment-Free
+          </p>
+        </div>
+      </div>
+
+      {/* RIGHT SIDE: Login Panel */}
+      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background relative">
+        <div className="absolute top-8 left-8 lg:hidden">
+          <Link className="flex items-center gap-2 group" href="/">
+            <Shield className="h-5 w-5 text-primary" />
+            <span className="font-heading font-extrabold text-sm tracking-tight text-primary uppercase">Digital Dignity</span>
+          </Link>
+        </div>
+
+        <Card className="w-full max-w-sm border-0 shadow-none bg-transparent">
+          <CardHeader className="space-y-2 pb-8 px-0 text-center lg:text-left">
+            <CardTitle className="font-heading text-3xl font-extrabold text-primary tracking-tight">
+              Welcome Back
+            </CardTitle>
+            <div className="flex items-center justify-center lg:justify-start gap-2 text-xs font-bold text-accent uppercase tracking-wider">
+              <Lock className="h-3 w-3" />
+              <span>Your privacy is our priority</span>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6 px-0">
+            <div className="flex justify-center w-full overflow-hidden rounded-2xl border border-primary/10 shadow-sm hover:shadow-md smooth-transition">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => console.log('Login Failed')}
+                shape="rectangular"
+                width="100%"
+                size="large"
+                text="signin_with"
+                theme="filled_blue"
+              />
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-primary/5" />
+              </div>
+              <div className="relative flex justify-center text-[10px] items-center font-extrabold uppercase tracking-widest text-primary/30">
+                <span className="bg-background px-4">OR CONTINUE WITH</span>
+              </div>
+            </div>
+
+            <Button variant="outline" className="w-full h-12 gap-3 border-primary/10 hover:border-primary/30 hover:bg-primary/5 rounded-2xl smooth-transition font-bold text-primary" asChild>
+              <Link href="/auth/login">
+                <Mail className="h-4 w-4" />
+                Use Email Address
+              </Link>
+            </Button>
+
+            <div className="pt-4 text-center">
+              <p className="text-xs text-foreground/50 font-medium">
+                New here? <Link href="/auth/login" className="text-primary font-bold hover:underline underline-offset-4">Create an account</Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Home button for mobile */}
+        <div className="mt-12 lg:hidden">
+          <Button variant="ghost" size="sm" asChild className="text-primary/40 text-xs font-bold gap-2">
+            <Link href="/">
+              <ArrowLeft className="h-3 w-3" /> BACK TO HOME
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }
