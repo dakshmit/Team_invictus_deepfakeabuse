@@ -1,10 +1,20 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Poppins } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: '--font-inter'
+});
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: '--font-poppins'
+});
 
 export const metadata: Metadata = {
   title: 'Digital Dignity - Protecting Users from Deepfake Abuse',
@@ -25,8 +35,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans antialiased`}>
-        {children}
+      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased bg-background text-foreground`}>
+        <GoogleOAuthProvider clientId="626411602341-4681rsethh1hiif1ofj34o3s3cp849ng.apps.googleusercontent.com">
+          {children}
+        </GoogleOAuthProvider>
         <Analytics />
       </body>
     </html>

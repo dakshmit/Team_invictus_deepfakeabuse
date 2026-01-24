@@ -1,131 +1,218 @@
+"use client"
+
 import Link from "next/link"
-import { Shield, Lock, MessageCircle, FileSearch } from "lucide-react"
+import { Shield, Lock, ArrowRight, Heart, Sparkles, Eye, ShieldCheck, MessageCircleHeart, Users, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Navbar } from "@/components/navbar"
-import { Footer } from "@/components/footer"
+import { Card, CardTitle } from "@/components/ui/card"
 
-export default function HomePage() {
+export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <Navbar />
+    <div className="flex min-h-screen flex-col bg-background font-sans overflow-x-hidden">
+      {/* Dynamic Background Elements */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-accent/10 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[10%] right-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[150px] animate-pulse delay-700" />
+      </div>
 
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden bg-background px-4 py-20 md:py-32">
-          <div className="container mx-auto max-w-4xl text-center">
-            <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/10">
-              <Shield className="h-10 w-10 text-primary" />
-            </div>
-
-            <h1 className="mb-6 text-balance text-4xl font-semibold tracking-tight text-foreground md:text-5xl lg:text-6xl">
-              You&apos;re not alone. We&apos;re here to help.
-            </h1>
-
-            <p className="mx-auto mb-10 max-w-2xl text-pretty text-lg text-muted-foreground md:text-xl">
-              This platform helps you understand and respond to suspected deepfake or altered images in a safe and private way.
-            </p>
-
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <Button asChild size="lg" className="w-full gap-2 sm:w-auto">
-                <Link href="/chat">
-                  <MessageCircle className="h-5 w-5" />
-                  Talk to Us Safely
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto bg-transparent">
-                <Link href="/upload">
-                  <FileSearch className="h-5 w-5" />
-                  Analyze an Image
-                </Link>
-              </Button>
-            </div>
+      {/* Navigation */}
+      <header className="px-6 lg:px-12 h-20 flex items-center justify-between bg-white/50 backdrop-blur-md sticky top-0 z-50 border-b border-primary/5">
+        <Link className="flex items-center gap-2.5 group" href="/">
+          <div className="bg-primary p-2 rounded-xl text-white shadow-lg shadow-primary/20 transition-transform group-hover:scale-105">
+            <Shield className="h-5 w-5" />
           </div>
+          <span className="font-heading font-extrabold text-xl tracking-tight text-primary uppercase">Digital Dignity</span>
+        </Link>
+        <nav className="flex gap-6 items-center">
+          <Link className="hidden sm:block text-xs font-bold text-primary/60 hover:text-primary transition-colors tracking-widest" href="/auth/login">
+            SIGN IN
+          </Link>
+          <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold h-10 px-6 rounded-xl shadow-md">
+            <Link href="/auth">GET STARTED</Link>
+          </Button>
+        </nav>
+      </header>
 
-          {/* Privacy Banner */}
-          <div className="container mx-auto mt-16 max-w-2xl">
-            <div className="flex items-center justify-center gap-3 rounded-2xl bg-accent/20 px-6 py-4 text-accent-foreground">
-              <Lock className="h-5 w-5 shrink-0 text-primary" />
-              <p className="text-sm font-medium">
-                Anonymous by default. Your data is never stored.
+      <main className="flex-1 relative z-10">
+        {/* HERO SECTION: Involvement focused */}
+        <section className="relative pt-20 pb-16 lg:pt-32 lg:pb-24 px-6 md:px-12">
+          <div className="container mx-auto grid lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-8 animate-in fade-in slide-in-from-left-6 duration-700">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-widest border border-accent/20">
+                <Sparkles className="h-3 w-3" /> New Standard for Digital Safety
+              </div>
+              <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-extrabold text-primary tracking-tighter leading-[0.95]">
+                Reclaiming Your <span className="text-accent underline decoration-accent/30 underline-offset-8">Digital Dignity</span>
+              </h1>
+              <p className="max-w-xl text-lg md:text-xl text-primary/60 font-medium leading-relaxed italic">
+                “Protecting Digital Dignity. Supporting You with Care.”
               </p>
+              <p className="max-w-lg text-foreground/70 font-medium leading-relaxed">
+                A private, tech-forward sanctuary for women to navigate the complexities of digital manipulation. We provide the tools to understand, analyze, and recover—on your own terms.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Button size="lg" className="bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 h-16 px-10 rounded-2xl text-base font-bold text-white group" asChild>
+                  <Link href="/chat">
+                    GET SUPPORT NOW <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="h-16 px-10 rounded-2xl text-base font-bold border-primary/20 text-primary hover:bg-primary/5 transition-all" asChild>
+                  <Link href="/auth">LEARN MORE</Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative aspect-square max-w-lg mx-auto lg:mr-0 animate-in fade-in zoom-in-95 duration-1000 delay-300">
+              <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-accent/10 rounded-[3rem] rotate-3 blur-3xl opacity-50" />
+              <div className="relative z-10 bg-white/40 backdrop-blur-xl border border-white/40 rounded-[3rem] p-8 shadow-2xl glass">
+                <img
+                  src="/safety_illustration_1769268952584.png"
+                  alt="Safety and Trust"
+                  className="w-full h-full object-contain filter drop-shadow-2xl"
+                />
+                <div className="absolute -bottom-6 -left-6 p-6 bg-white rounded-3xl shadow-xl border border-primary/5 max-w-[200px] animate-bounce-slow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-2 w-2 rounded-full bg-accent" />
+                    <span className="text-[10px] font-bold text-accent uppercase tracking-widest">Live Security</span>
+                  </div>
+                  <p className="text-[11px] font-bold text-primary/60 leading-tight">AES-256 Encryption active for all uploaded artifacts.</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="bg-muted/30 px-4 py-20">
-          <div className="container mx-auto max-w-5xl">
-            <h2 className="mb-12 text-center text-2xl font-semibold text-foreground md:text-3xl">
-              How we can help
-            </h2>
+        {/* GUIDED JOURNEY: Educational/Involving */}
+        <section className="py-24 bg-primary/5 relative overflow-hidden">
+          <div className="container mx-auto px-6 text-center space-y-16">
+            <div className="max-w-2xl mx-auto space-y-4">
+              <h2 className="font-heading text-3xl md:text-4xl font-extrabold text-primary tracking-tight">How Your Journey Begins</h2>
+              <p className="text-foreground/60 font-medium">Three clear steps to reclaim your peace of mind and technical control.</p>
+            </div>
 
-            <div className="grid gap-6 md:grid-cols-3">
-              <Card className="border-0 bg-card shadow-sm transition-shadow hover:shadow-md">
-                <CardContent className="p-6">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <MessageCircle className="h-6 w-6 text-primary" />
+            <div className="grid md:grid-cols-3 gap-8 relative z-10">
+              <div className="flex flex-col items-center space-y-6 group">
+                <div className="relative">
+                  <div className="h-20 w-20 rounded-3xl bg-white shadow-xl shadow-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                    <Users className="h-10 w-10" />
                   </div>
-                  <h3 className="mb-2 text-lg font-medium text-foreground">
-                    Supportive Conversation
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Talk to our AI assistant in a calm, judgment-free environment. We listen first.
-                  </p>
-                </CardContent>
+                  <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-accent text-white font-bold text-xs flex items-center justify-center shadow-lg">1</div>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-heading font-extrabold text-primary text-lg">Share Your Story</h4>
+                  <p className="text-sm text-foreground/60 leading-relaxed px-4">Speak freely with Sakhi, our supportive companion AI trained for digital empathy.</p>
+                </div>
+              </div>
+              <div className="flex flex-col items-center space-y-6 group">
+                <div className="relative">
+                  <div className="h-20 w-20 rounded-3xl bg-white shadow-xl shadow-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                    <Eye className="h-10 w-10" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-accent text-white font-bold text-xs flex items-center justify-center shadow-lg">2</div>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-heading font-extrabold text-primary text-lg">Technical Analysis</h4>
+                  <div className="inline-flex px-2 py-0.5 rounded-md bg-accent/10 text-[9px] font-bold text-accent uppercase tracking-widest mb-1 mx-auto block w-fit">Powered by Gemini Forensics</div>
+                  <p className="text-sm text-foreground/60 leading-relaxed px-4">Upload artifacts for a secure, technical scan to understand manipulation indicators.</p>
+                </div>
+              </div>
+              <div className="flex flex-col items-center space-y-6 group">
+                <div className="relative">
+                  <div className="h-20 w-20 rounded-3xl bg-white shadow-xl shadow-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                    <ShieldCheck className="h-10 w-10" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-accent text-white font-bold text-xs flex items-center justify-center shadow-lg">3</div>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-heading font-extrabold text-primary text-lg">Reclaim Control</h4>
+                  <p className="text-sm text-foreground/60 leading-relaxed px-4">Generate formal complaints and get emotional guidance to move forward with dignity.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* PILLARS OF DIGNITY: Feature grid */}
+        <section className="py-24 px-6">
+          <div className="container mx-auto">
+            <div className="grid lg:grid-cols-3 gap-8">
+              <Card className="p-10 rounded-[2.5rem] border-primary/5 bg-white shadow-xl shadow-primary/5 hover:shadow-2xl hover:-translate-y-2 transition-all cursor-default overflow-hidden group">
+                <div className="h-14 w-14 rounded-2xl bg-primary/5 flex items-center justify-center text-primary mb-8 group-hover:bg-primary group-hover:text-white transition-colors">
+                  <Lock className="h-7 w-7" />
+                </div>
+                <CardTitle className="font-heading text-2xl font-extrabold text-primary mb-4 tracking-tight">Radical Privacy</CardTitle>
+                <p className="text-foreground/60 font-medium leading-relaxed">
+                  Your data is never for sale. We use end-to-end encryption to ensure that only you can access your forensic artifacts.
+                </p>
               </Card>
 
-              <Card className="border-0 bg-card shadow-sm transition-shadow hover:shadow-md">
-                <CardContent className="p-6">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <FileSearch className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-medium text-foreground">
-                    Private Analysis
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Upload images for analysis. They&apos;re processed temporarily and never stored.
-                  </p>
-                </CardContent>
+              <Card className="p-10 rounded-[2.5rem] border-accent/10 bg-accent/5 shadow-xl shadow-accent/5 hover:shadow-2xl hover:-translate-y-2 transition-all cursor-default relative overflow-hidden group">
+                <div className="h-14 w-14 rounded-2xl bg-accent/10 flex items-center justify-center text-accent mb-8 group-hover:bg-accent group-hover:text-white transition-colors">
+                  <MessageCircleHeart className="h-7 w-7" />
+                </div>
+                <CardTitle className="font-heading text-2xl font-extrabold text-primary mb-4 tracking-tight">Sakhi AI</CardTitle>
+                <p className="text-primary/70 font-medium leading-relaxed">
+                  A dedicated companion that listens without judgment, helping you break through the anxiety of digital abuse.
+                </p>
+                <div className="absolute top-[-20%] right-[-20%] w-[50%] h-[50%] bg-accent/10 rounded-full blur-[80px]" />
               </Card>
 
-              <Card className="border-0 bg-card shadow-sm transition-shadow hover:shadow-md">
-                <CardContent className="p-6">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <Shield className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-medium text-foreground">
-                    Guided Support
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Get help drafting complaints and understanding your options, at your own pace.
-                  </p>
-                </CardContent>
+              <Card className="p-10 rounded-[2.5rem] border-primary/5 bg-white shadow-xl shadow-primary/5 hover:shadow-2xl hover:-translate-y-2 transition-all cursor-default overflow-hidden group">
+                <div className="h-14 w-14 rounded-2xl bg-primary/5 flex items-center justify-center text-primary mb-8 group-hover:bg-primary group-hover:text-white transition-colors">
+                  <Zap className="h-7 w-7" />
+                </div>
+                <CardTitle className="font-heading text-2xl font-extrabold text-primary mb-4 tracking-tight">Fast Resolution</CardTitle>
+                <p className="text-foreground/60 font-medium leading-relaxed">
+                  From analysis to legal complaint ready in minutes. We handle the technical heavy lifting so you don't have to.
+                </p>
               </Card>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="bg-background px-4 py-20">
-          <div className="container mx-auto max-w-2xl text-center">
-            <h2 className="mb-4 text-2xl font-semibold text-foreground">
-              Ready to take the first step?
-            </h2>
-            <p className="mb-8 text-muted-foreground">
-              There&apos;s no pressure and no judgment. We&apos;re here when you need us.
-            </p>
-            <Button asChild size="lg" className="gap-2">
-              <Link href="/chat">
-                <MessageCircle className="h-5 w-5" />
-                Start a Conversation
-              </Link>
-            </Button>
+        {/* DIGNITY PROMISE: High trust anchor */}
+        <section className="py-24 px-6 bg-primary text-white text-center">
+          <div className="container mx-auto space-y-12 max-w-4xl">
+            <div className="space-y-4">
+              <h2 className="font-heading text-4xl md:text-5xl font-extrabold tracking-tight">The Dignity Promise</h2>
+              <p className="text-white/60 font-medium italic">“We believe every woman deserves a safe digital existence.”</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-8 text-left">
+              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                <h4 className="font-heading font-extrabold mb-3 flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-accent" /> Non-Diagnostic
+                </h4>
+                <p className="text-sm text-white/50 leading-relaxed">We provide artifacts and indicators, leaving the final conclusion to you. We respect your autonomy.</p>
+              </div>
+              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                <h4 className="font-heading font-extrabold mb-3 flex items-center gap-2">
+                  <Users className="h-5 w-5 text-accent" /> Community Driven
+                </h4>
+                <p className="text-sm text-white/50 leading-relaxed">Our workflows are designed with input from victims and advocates to ensure real-world effectiveness.</p>
+              </div>
+            </div>
+            <div className="pt-8">
+              <Button size="lg" className="bg-accent hover:bg-accent/90 text-white font-bold h-16 px-12 rounded-2xl shadow-2xl shadow-accent/20" asChild>
+                <Link href="/auth">START YOUR JOURNEY</Link>
+              </Button>
+            </div>
           </div>
         </section>
       </main>
 
-      <Footer />
+      <footer className="py-12 border-t border-primary/5 bg-white relative z-10">
+        <div className="container px-6 mx-auto flex flex-col items-center justify-center gap-4">
+          <Link className="flex items-center gap-2 mb-2" href="/">
+            <Shield className="h-5 w-5 text-primary" />
+            <span className="font-heading font-extrabold text-sm tracking-tight text-primary uppercase">Digital Dignity</span>
+          </Link>
+          <p className="text-[10px] font-bold text-primary/30 uppercase tracking-[0.4em]">
+            Private • Secure • Judgment-Free
+          </p>
+          <div className="flex items-center gap-1.5 text-xs text-primary/40 font-medium border-t border-primary/5 pt-6 w-full justify-center">
+            Made with <Heart className="h-3 w-3 text-destructive fill-destructive" /> by Team Invictus for your digital freedom.
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

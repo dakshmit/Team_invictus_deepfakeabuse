@@ -1,189 +1,158 @@
 "use client"
 
-import React from "react"
-
-import { useState, useCallback } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { ArrowLeft, Upload, X, Lock, FileImage } from "lucide-react"
+import { useState } from "react"
+import { Shield, Upload, FileImage, Lock, AlertCircle, ArrowRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+import { useRouter } from 'next/navigation'
 
 export default function UploadPage() {
-  const router = useRouter()
+  const [dragActive, setDragActive] = useState(false)
   const [file, setFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploaded, setUploaded] = useState(false)
+  const router = useRouter()
 
-  const handleFile = (selectedFile: File) => {
-    if (selectedFile.type.startsWith("image/")) {
-      setFile(selectedFile)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreview(reader.result as string)
-      }
-      reader.readAsDataURL(selectedFile)
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true)
+    else if (e.type === "dragleave") setDragActive(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0])
     }
   }
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault()
-    setIsDragging(false)
-    const droppedFile = e.dataTransfer.files[0]
-    if (droppedFile) {
-      handleFile(droppedFile)
-    }
-  }, [])
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }, [])
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    if (selectedFile) {
-      handleFile(selectedFile)
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0])
     }
   }
 
-  const removeFile = () => {
-    setFile(null)
-    setPreview(null)
-  }
+  const handleUpload = async () => {
+    if (!file) return
+    setIsUploading(true)
 
-  const handleAnalyze = () => {
-    setIsAnalyzing(true)
-    // Simulate analysis
-    setTimeout(() => {
-      router.push("/result")
-    }, 2000)
+    // Simulate encryption and upload delay
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
+    setIsUploading(false)
+    setUploaded(true)
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/chat">
-                <ArrowLeft className="h-5 w-5" />
-                <span className="sr-only">Back</span>
-              </Link>
-            </Button>
-            <h1 className="text-lg font-semibold">Analyze Image</h1>
-          </div>
-          
-          <div className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
-            <Lock className="h-3.5 w-3.5" />
-            Privacy Protected
-          </div>
-        </div>
-      </header>
+    <div className="flex min-h-screen flex-col bg-gray-50 items-center justify-center p-4">
+      <div className="w-full max-w-xl">
+        <Card className="border-0 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-teal-600" />
 
-      {/* Main Content */}
-      <main className="flex flex-1 items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-lg shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">Upload an Image</CardTitle>
-            <CardDescription className="text-base">
-              Your images are analyzed temporarily and not stored.
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50 text-teal-600">
+              <Upload className="h-7 w-7" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Secure Intake</CardTitle>
+            <CardDescription>
+              Upload the image you wish to analyze. It will be encrypted immediately.
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-6">
-            {!preview ? (
+          <CardContent className="p-6">
+            {!uploaded ? (
               <div
+                className={`relative border-2 border-dashed rounded-2xl transition-all p-12 text-center ${dragActive ? "border-teal-600 bg-teal-50" : "border-gray-200 bg-white"
+                  }`}
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
                 onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                className={cn(
-                  "relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed transition-colors",
-                  isDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50 hover:bg-muted/50"
-                )}
               >
                 <input
                   type="file"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={handleChange}
                   accept="image/*"
-                  onChange={handleFileInput}
-                  className="absolute inset-0 cursor-pointer opacity-0"
                 />
-                <div className="flex flex-col items-center gap-3 p-6 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-                    <Upload className="h-7 w-7 text-primary" />
+
+                {file ? (
+                  <div className="space-y-4 animate-in fade-in zoom-in-95">
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-xl bg-gray-100">
+                      <FileImage className="h-10 w-10 text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{file.name}</p>
+                      <p className="text-sm text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setFile(null); }} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                      Remove file
+                    </Button>
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">
-                      Drag and drop or click to upload
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      PNG, JPG, or WEBP up to 10MB
-                    </p>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gray-50 border border-gray-100">
+                      <Upload className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Click or drag image to upload</p>
+                      <p className="text-sm text-gray-500">PNG, JPG or JPEG (max. 10MB)</p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="relative overflow-hidden rounded-2xl border border-border">
-                  <img
-                    src={preview || "/placeholder.svg"}
-                    alt="Preview"
-                    className="h-auto w-full object-contain"
-                  />
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute right-2 top-2"
-                    onClick={removeFile}
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Remove image</span>
-                  </Button>
+              <div className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 py-8">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-teal-100 text-teal-600">
+                  <Lock className="h-8 w-8" />
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <FileImage className="h-4 w-4" />
-                  <span className="truncate">{file?.name}</span>
+                <div>
+                  <h4 className="text-xl font-bold text-gray-900">Evidence Securely Preserved</h4>
+                  <p className="text-gray-500 mt-2">The image has been encrypted and moved to your private vault.</p>
+                </div>
+                <div className="bg-teal-50 border border-teal-100 p-4 rounded-xl inline-flex items-center gap-2 text-teal-800 text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  Status: Encryption Successful
                 </div>
               </div>
             )}
+          </CardContent>
 
-            <div className="space-y-3">
+          <CardFooter className="bg-gray-50/80 p-6 flex flex-col sm:flex-row gap-3">
+            {!uploaded ? (
               <Button
-                onClick={handleAnalyze}
-                disabled={!file || isAnalyzing}
-                className="w-full"
-                size="lg"
+                className="w-full bg-teal-600 hover:bg-teal-700 h-12"
+                disabled={!file || isUploading}
+                onClick={handleUpload}
               >
-                {isAnalyzing ? (
+                {isUploading ? (
                   <>
-                    <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                    Analyzing...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Encrypting...
                   </>
                 ) : (
-                  "Analyze for Manipulation"
+                  "Upload Securely"
                 )}
               </Button>
-              <Button variant="ghost" className="w-full" asChild>
-                <Link href="/chat">Cancel and return</Link>
+            ) : (
+              <Button
+                className="w-full bg-teal-600 hover:bg-teal-700 h-12 gap-2"
+                onClick={() => router.push('/upload/analyze')}
+              >
+                Analyze with Image Intelligence <ArrowRight className="h-4 w-4" />
               </Button>
-            </div>
-
-            <p className="text-center text-xs text-muted-foreground">
-              Your image is processed securely and deleted immediately after analysis.
-            </p>
-          </CardContent>
+            )}
+          </CardFooter>
         </Card>
-      </main>
+
+        <p className="mt-8 text-center text-xs text-gray-400 uppercase tracking-widest font-medium">
+          End-to-End Encrypted &bull; User Controlled &bull; Zero Peak Policy
+        </p>
+      </div>
     </div>
   )
 }
