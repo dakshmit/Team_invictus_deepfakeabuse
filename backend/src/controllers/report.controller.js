@@ -58,3 +58,20 @@ export const submitReport = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 }
+
+export const getReportById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const report = await prisma.report.findUnique({
+            where: { id },
+            include: {
+                aiAnalysis: true,
+            },
+        });
+        if (!report) return res.status(404).json({ error: 'Report not found' });
+        res.json(report);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};

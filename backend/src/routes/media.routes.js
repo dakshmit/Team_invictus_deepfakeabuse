@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { uploadMedia } from '../controllers/media.controller.js';
+import { uploadMedia, uploadSecureEvidence } from '../controllers/media.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -38,5 +38,26 @@ const upload = multer({ storage });
  *         description: file uploaded and encrypted
  */
 router.post('/upload', protect, upload.single('file'), uploadMedia);
+
+/**
+ * @swagger
+ * /media/upload-secure:
+ *   post:
+ *     summary: Securely hash and encrypt evidence
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               base64Data:
+ *                 type: string
+ *               mimeType:
+ *                 type: string
+ */
+router.post('/upload-secure', protect, uploadSecureEvidence);
 
 export default router;

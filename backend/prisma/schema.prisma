@@ -8,43 +8,48 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   name         String
-  email        String   @unique
+  email        String    @unique
   passwordHash String
-  role         Role     @default(USER)
-  createdAt    DateTime @default(now())
+  role         Role      @default(USER)
+  createdAt    DateTime  @default(now())
+  isVerified   Boolean   @default(false)
+  otp          String?
+  otpExpires   DateTime?
   reports      Report[]
 }
 
 model Report {
   id            String          @id @default(uuid())
   userId        String
-  user          User            @relation(fields: [userId], references: [id])
   description   String
   status        ReportStatus    @default(DRAFT)
   createdAt     DateTime        @default(now())
-  mediaEvidence MediaEvidence[]
   aiAnalysis    AIAnalysis?
+  mediaEvidence MediaEvidence[]
+  user          User            @relation(fields: [userId], references: [id])
 }
 
 model MediaEvidence {
-  id        String   @id @default(uuid())
-  reportId  String
-  report    Report   @relation(fields: [reportId], references: [id])
-  filePath  String
-  fileHash  String
-  fileType  MediaType
-  uploadedAt DateTime @default(now())
+  id          String    @id @default(uuid())
+  reportId    String?
+  filePath    String
+  fileHash    String
+  fileType    MediaType
+  uploadedAt  DateTime  @default(now())
+  description String?
+  metadata    String?
+  report      Report?   @relation(fields: [reportId], references: [id])
 }
 
 model AIAnalysis {
   id              String   @id @default(uuid())
   reportId        String   @unique
-  report          Report   @relation(fields: [reportId], references: [id])
   analysisText    String
   confidenceScore Float
   createdAt       DateTime @default(now())
+  report          Report   @relation(fields: [reportId], references: [id])
 }
 
 enum Role {
@@ -55,6 +60,7 @@ enum Role {
 enum ReportStatus {
   DRAFT
   SUBMITTED
+  VERIFIED
   RESOLVED
 }
 

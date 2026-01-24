@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login } from '../controllers/auth.controller.js';
+import { register, login, googleLogin, verifyOtp } from '../controllers/auth.controller.js';
 
 const router = express.Router();
 
@@ -40,6 +40,34 @@ const router = express.Router();
  *         description: User already exists
  */
 router.post('/register', register);
+
+/**
+ * @swagger
+ * /auth/verify-otp:
+ *   post:
+ *     summary: Verify email with OTP
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *               otp:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Verified successfully
+ *       400:
+ *         description: Invalid OTP
+ */
+router.post('/verify-otp', verifyOtp);
 
 /**
  * @swagger
@@ -93,7 +121,6 @@ router.post('/login', login);
  *       401:
  *         description: Invalid Token
  */
-import { googleLogin } from '../controllers/auth.controller.js';
 router.post('/google', googleLogin);
 
 export default router;
