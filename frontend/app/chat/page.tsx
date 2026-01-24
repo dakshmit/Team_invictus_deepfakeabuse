@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Send, User, Bot, ShieldCheck, CheckCircle2, ImagePlus, X, Loader2, AlertCircle, Shield, ArrowRight, MessageCircleHeart, Lock } from "lucide-react"
+import { Send, User, Bot, ShieldCheck, CheckCircle2, ImagePlus, X, Loader2, AlertCircle, Shield, ArrowRight, MessageCircleHeart, Lock, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { ai, media, intelligence, report } from "@/lib/api"
 import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
+import axios from "axios"
 
 interface Message {
   role: "user" | "model"
@@ -220,6 +221,28 @@ export default function ChatPage() {
     }
   }
 
+  const handleDownloadPDF = async () => {
+    if (!lastReportId) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`http://localhost:5021/api/report/${lastReportId}/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `digital-dignity-complaint-${lastReportId.slice(-6)}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Download failed", error);
+      alert("Failed to download PDF. Please try again.");
+    }
+  };
+
   return (
     <div className="flex h-screen flex-col bg-background font-sans overflow-hidden">
       {/* HEADER */}
@@ -351,14 +374,15 @@ export default function ChatPage() {
                 </div>
               )}
               {msg.role === "model" && msg.parts.includes("formal complaint") && (
-                <div className="ml-11">
+                <div className="ml-11 flex gap-2">
                   <Button
                     size="sm"
-                    onClick={() => router.push(`/complaint/new?reportId=${lastReportId}`)}
-                    className="bg-primary text-white hover:bg-primary/90 h-10 px-6 rounded-xl font-bold shadow-lg shadow-primary/20 animate-pulse border-0"
+                    variant="outline"
+                    onClick={handleDownloadPDF}
+                    className="h-10 px-6 rounded-xl font-bold border-primary/10 bg-white text-primary hover:bg-primary/5 shadow-sm"
                   >
-                    <AlertCircle className="h-4 w-4 mr-2" />
-                    FILE LEGAL COMPLAINT
+                    <Download className="h-4 w-4 mr-2" />
+                    DOWNLOAD COMPLAINT (PDF)
                   </Button>
                 </div>
               )}
