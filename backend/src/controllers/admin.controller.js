@@ -10,10 +10,8 @@ export const getForensicReports = async (req, res) => {
         const reports = await prisma.aIAnalysis.findMany({
             include: {
                 report: {
-                    select: {
-                        id: true,
-                        createdAt: true,
-                        status: true,
+                    include: {
+                        complaint: true // Include the new complaint draft
                     }
                 }
             },
@@ -23,19 +21,24 @@ export const getForensicReports = async (req, res) => {
         });
 
         // Parse technical data for the Admin view
-        const formattedReports = reports.map(report => {
+        const formattedReports = reports.map(a => {
             let technicalData = {};
             try {
-                technicalData = JSON.parse(report.analysisText);
+                technicalData = JSON.parse(a.analysisText);
             } catch (e) {
-                technicalData = { raw: report.analysisText };
+                console.error("Failed to parse analysisText for", a.id);
+                technicalData = { analysisSummary: "Format Error: Could not parse technical data." };
             }
 
             return {
-                id: report.id,
-                reportId: report.reportId,
-                timestamp: report.createdAt,
-                confidenceScore: report.confidenceScore,
+                id: a.id,
+                reportId: a.reportId,
+                timestamp: a.createdAt,
+                confidenceScore: a.confidenceScore || technicalData.confidenceScore || 0,
+                status: a.report?.status || 'SUBMITTED',
+                analysisSummary: technicalData.analysisSummary || "No technical summary available.",
+                indicators: technicalData.indicators || [],
+                complaint: a.report?.complaint || null, // Pass full complaint object
                 ...technicalData
             };
         });
@@ -52,7 +55,14 @@ export const getReportDetails = async (req, res) => {
     try {
         const { id } = req.params;
         const analysis = await prisma.aIAnalysis.findUnique({
-            where: { reportId: id }
+            where: { reportId: id },
+            include: {
+                report: {
+                    include: {
+                        complaint: true
+                    }
+                }
+            }
         });
 
         if (!analysis) {
@@ -63,13 +73,16 @@ export const getReportDetails = async (req, res) => {
         try {
             technicalData = JSON.parse(analysis.analysisText);
         } catch (e) {
-            technicalData = { raw: analysis.analysisText };
+            technicalData = { analysisSummary: "Error parsing technical payload." };
         }
+
+        const report = await prisma.report.findUnique({ where: { id: analysis.reportId } });
 
         res.json({
             id: analysis.id,
             reportId: analysis.reportId,
-            confidenceScore: analysis.confidenceScore,
+            confidenceScore: analysis.confidenceScore || technicalData.confidenceScore || 0,
+            status: report?.status || 'SUBMITTED',
             ...technicalData
         });
     } catch (error) {

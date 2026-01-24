@@ -25,9 +25,10 @@ export default function ChatPage() {
   const [isConsented, setIsConsented] = useState(false)
   const [showEvidenceForm, setShowEvidenceForm] = useState(false)
   const [selectedImage, setSelectedImage] = useState<{ file: File, preview: string } | null>(null)
+  const [selectedOriginalImage, setSelectedOriginalImage] = useState<{ file: File, preview: string } | null>(null)
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const [forensicLoading, setForensicLoading] = useState(false)
-  const [lastUploadedImage, setLastUploadedImage] = useState<{ base64: string, mimeType: string } | null>(null)
+  const [lastUploadedImage, setLastUploadedImage] = useState<{ morphed: { base64: string, mimeType: string }, original?: { base64: string, mimeType: string } } | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [lastReportId, setLastReportId] = useState<string | null>(null)
   const [isVerified, setIsVerified] = useState(false)
@@ -60,9 +61,13 @@ export default function ChatPage() {
 
   // Evidence Form State
   const [evidenceData, setEvidenceData] = useState({
+    victimName: "",
     platform: "",
     description: "",
-    date: ""
+    date: "",
+    discoveryUrl: "",
+    impactSummary: "",
+    relationship: ""
   })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -139,14 +144,23 @@ export default function ChatPage() {
     setAnalysisLoading(true)
 
     try {
-      const base64 = await fileToBase64(selectedImage.file)
+      const morphedBase64 = await fileToBase64(selectedImage.file)
+      let originalBase64 = null
+      if (selectedOriginalImage) {
+        originalBase64 = await fileToBase64(selectedOriginalImage.file)
+      }
+
       const uploadRes = await media.uploadSecure({
-        base64Data: base64,
+        base64Data: morphedBase64,
         mimeType: selectedImage.file.type,
         description: evidenceData.description,
         metadata: {
+          victimName: evidenceData.victimName,
           platform: evidenceData.platform,
           date: evidenceData.date,
+          discoveryUrl: evidenceData.discoveryUrl,
+          impactSummary: evidenceData.impactSummary,
+          relationship: evidenceData.relationship,
           submittedAt: new Date().toISOString()
         }
       })
@@ -164,8 +178,20 @@ export default function ChatPage() {
 
       setShowEvidenceForm(false)
       setSelectedImage(null)
-      setEvidenceData({ platform: "", description: "", date: "" })
-      setLastUploadedImage({ base64, mimeType: selectedImage.file.type })
+      setSelectedOriginalImage(null)
+      setEvidenceData({
+        victimName: "",
+        platform: "",
+        description: "",
+        date: "",
+        discoveryUrl: "",
+        impactSummary: "",
+        relationship: ""
+      })
+      setLastUploadedImage({
+        morphed: { base64: morphedBase64, mimeType: selectedImage.file.type },
+        original: originalBase64 ? { base64: originalBase64, mimeType: selectedOriginalImage?.file.type || 'image/jpeg' } : undefined
+      })
       setLastReportId(uploadRes.data.reportId)
 
       setTimeout(() => {
@@ -194,9 +220,10 @@ export default function ChatPage() {
 
     try {
       const res = await intelligence.detailedAnalysis(
-        lastUploadedImage.base64,
-        lastUploadedImage.mimeType,
-        lastReportId || undefined
+        lastUploadedImage.morphed.base64,
+        lastUploadedImage.morphed.mimeType,
+        lastReportId || undefined,
+        lastUploadedImage.original?.base64
       )
       const data = res.data
 
@@ -221,6 +248,9 @@ export default function ChatPage() {
     }
   }
 
+  const [submittingToNGO, setSubmittingToNGO] = useState(false)
+  const [isSubmittedToNGO, setIsSubmittedToNGO] = useState(false)
+
   const handleDownloadPDF = async () => {
     if (!lastReportId) return;
     try {
@@ -240,6 +270,40 @@ export default function ChatPage() {
     } catch (error) {
       console.error("Download failed", error);
       alert("Failed to download PDF. Please try again.");
+    }
+  };
+
+  const handleSubmitToNGO = async () => {
+    if (!lastReportId) return;
+    setSubmittingToNGO(true);
+    try {
+      const token = localStorage.getItem('token');
+      // 1. Get the PDF as a blob from the backend
+      const response = await axios.get(`http://localhost:5021/api/report/${lastReportId}/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+
+      // 2. Convert blob to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(response.data);
+      reader.onloadend = async () => {
+        const base64data = (reader.result as string).split(',')[1];
+
+        // 3. Submit back to backend for storage linked to NGO view
+        await report.submitComplaintDocument(lastReportId, base64data);
+
+        setIsSubmittedToNGO(true);
+        setMessages(prev => [...prev, {
+          role: "model",
+          parts: "✅ **Success!** Your complaint document has been securely submitted to our NGO partners. A professional will review it and guide you on the next steps shortly."
+        }]);
+      };
+    } catch (error) {
+      console.error("NGO Submission failed", error);
+      alert("Failed to submit to NGO. Please try again.");
+    } finally {
+      setSubmittingToNGO(false);
     }
   };
 
@@ -384,6 +448,15 @@ export default function ChatPage() {
                     <Download className="h-4 w-4 mr-2" />
                     DOWNLOAD COMPLAINT (PDF)
                   </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSubmitToNGO}
+                    disabled={submittingToNGO || isSubmittedToNGO}
+                    className={`h-10 px-6 rounded-xl font-bold border-0 shadow-lg smooth-transition ${isSubmittedToNGO ? 'bg-green-500 text-white cursor-default' : 'bg-primary hover:bg-primary/90 text-white shadow-primary/20'}`}
+                  >
+                    {submittingToNGO ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : isSubmittedToNGO ? <CheckCircle2 className="h-4 w-4 mr-2" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
+                    {isSubmittedToNGO ? 'SUBMITTED TO NGO' : 'SUBMIT COMPLAINT TO NGO'}
+                  </Button>
                 </div>
               )}
             </div>
@@ -408,61 +481,112 @@ export default function ChatPage() {
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-primary/40 hover:text-primary rounded-full transition-colors" onClick={() => setShowEvidenceForm(false)}><X className="h-5 w-5" /></Button>
                   </div>
                 </CardHeader>
-                <CardContent className="p-6 space-y-5">
-                  <div className="grid grid-cols-2 gap-4">
+                <CardContent className="p-6 space-y-5 overflow-y-auto max-h-[60vh]">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="platform" className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1">Source Platform</Label>
-                      <Input id="platform" placeholder="Instagram, WhatsApp..." className="h-12 rounded-2xl border-primary/5 bg-white/50 focus:bg-white text-sm font-medium shadow-sm" value={evidenceData.platform} onChange={e => setEvidenceData({ ...evidenceData, platform: e.target.value })} />
+                      <Label htmlFor="victimName" className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1">Victim Name (or Anonymous ID)</Label>
+                      <Input id="victimName" placeholder="e.g. Anjali Sharma or User_772" className="h-12 rounded-2xl border-primary/5 bg-white/50 focus:bg-white text-sm font-medium shadow-sm" value={evidenceData.victimName} onChange={e => setEvidenceData({ ...evidenceData, victimName: e.target.value })} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="date" className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1">Incident Date</Label>
+                      <Label htmlFor="date" className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1">Discovery Date</Label>
                       <Input id="date" type="date" className="h-12 rounded-2xl border-primary/5 bg-white/50 focus:bg-white text-sm font-medium shadow-sm" value={evidenceData.date} onChange={e => setEvidenceData({ ...evidenceData, date: e.target.value })} />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1">Brief Description</Label>
-                    <Input id="description" placeholder="What does this image/video show?" className="h-12 rounded-2xl border-primary/5 bg-white/50 focus:bg-white text-sm font-medium shadow-sm" value={evidenceData.description} onChange={e => setEvidenceData({ ...evidenceData, description: e.target.value })} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="platform" className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1">Discovery Platform</Label>
+                      <Input id="platform" placeholder="Instagram, WhatsApp, Telegram..." className="h-12 rounded-2xl border-primary/5 bg-white/50 focus:bg-white text-sm font-medium shadow-sm" value={evidenceData.platform} onChange={e => setEvidenceData({ ...evidenceData, platform: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="discoveryUrl" className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1">Discovery URL / Handle (Optional)</Label>
+                      <Input id="discoveryUrl" placeholder="https://..." className="h-12 rounded-2xl border-primary/5 bg-white/50 focus:bg-white text-sm font-medium shadow-sm" value={evidenceData.discoveryUrl} onChange={e => setEvidenceData({ ...evidenceData, discoveryUrl: e.target.value })} />
+                    </div>
                   </div>
 
-                  <div className="space-y-3 pt-2">
-                    <Label className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1">Secure Attachment</Label>
-                    {selectedImage ? (
-                      <div className="relative rounded-3xl overflow-hidden border-2 border-primary/5 bg-white shadow-inner p-3">
-                        <img src={selectedImage.preview} className="h-40 w-full object-contain rounded-2xl bg-gray-50 border border-primary/5" />
-                        <button
-                          onClick={() => setSelectedImage(null)}
-                          className="absolute top-6 right-6 bg-red-500/90 text-white rounded-full p-2 shadow-2xl backdrop-blur-md hover:bg-red-600 smooth-transition"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="relationship" className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1">Relationship to Suspect (If any)</Label>
+                      <Input id="relationship" placeholder="Former friend, unknown, etc." className="h-12 rounded-2xl border-primary/5 bg-white/50 focus:bg-white text-sm font-medium shadow-sm" value={evidenceData.relationship} onChange={e => setEvidenceData({ ...evidenceData, relationship: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="impact" className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1">Personal Impact Summary</Label>
+                      <Input id="impact" placeholder="Reputational harm, anxiety..." className="h-12 rounded-2xl border-primary/5 bg-white/50 focus:bg-white text-sm font-medium shadow-sm" value={evidenceData.impactSummary} onChange={e => setEvidenceData({ ...evidenceData, impactSummary: e.target.value })} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1">Evidence Description</Label>
+                    <Input id="description" placeholder="Briefly describe what this evidence shows..." className="h-12 rounded-2xl border-primary/5 bg-white/50 focus:bg-white text-sm font-medium shadow-sm" value={evidenceData.description} onChange={e => setEvidenceData({ ...evidenceData, description: e.target.value })} />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1 text-center block">1. Suspected Morphed Media</Label>
+                      {selectedImage ? (
+                        <div className="relative rounded-3xl overflow-hidden border-2 border-accent/20 bg-white shadow-inner p-3">
+                          <img src={selectedImage.preview} className="h-32 w-full object-contain rounded-2xl bg-gray-50 border border-primary/5" />
+                          <button
+                            onClick={() => setSelectedImage(null)}
+                            className="absolute top-6 right-6 bg-red-500/90 text-white rounded-full p-2 shadow-2xl backdrop-blur-md hover:bg-red-600 smooth-transition"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className="border-2 border-dashed border-primary/10 rounded-[2rem] p-6 flex flex-col items-center justify-center gap-2 bg-white/50 hover:bg-white hover:border-primary/30 transition-all cursor-pointer group shadow-sm h-40"
                         >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div
-                        onClick={() => fileInputRef.current?.click()}
-                        className="border-2 border-dashed border-primary/10 rounded-[2rem] p-10 flex flex-col items-center justify-center gap-3 bg-white/50 hover:bg-white hover:border-primary/30 transition-all cursor-pointer group shadow-sm"
-                      >
-                        <div className="h-14 w-14 rounded-2xl bg-primary/5 flex items-center justify-center group-hover:scale-110 smooth-transition shadow-sm">
-                          <ImagePlus className="h-7 w-7 text-primary" />
+                          <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center group-hover:scale-110 smooth-transition shadow-sm">
+                            <ImagePlus className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="text-center">
+                            <span className="block text-xs font-bold text-primary/70">Morphed Photo</span>
+                          </div>
                         </div>
-                        <div className="text-center">
-                          <span className="block text-sm font-bold text-primary/70">Click to Select Evidence</span>
-                          <span className="text-[10px] text-primary/40 uppercase tracking-widest">End-to-End Encrypted Upload</span>
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-1 text-center block">2. Original Photo (For Comparison)</Label>
+                      {selectedOriginalImage ? (
+                        <div className="relative rounded-3xl overflow-hidden border-2 border-green-500/20 bg-white shadow-inner p-3">
+                          <img src={selectedOriginalImage.preview} className="h-32 w-full object-contain rounded-2xl bg-gray-50 border border-primary/5" />
+                          <button
+                            onClick={() => setSelectedOriginalImage(null)}
+                            className="absolute top-6 right-6 bg-red-500/90 text-white rounded-full p-2 shadow-2xl backdrop-blur-md hover:bg-red-600 smooth-transition"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <div
+                          onClick={() => (window as any).originalFileInputRef?.click()}
+                          className="border-2 border-dashed border-primary/10 rounded-[2rem] p-6 flex flex-col items-center justify-center gap-2 bg-white/50 hover:bg-white hover:border-primary/30 transition-all cursor-pointer group shadow-sm h-40"
+                        >
+                          <div className="h-10 w-10 rounded-xl bg-green-500/5 flex items-center justify-center group-hover:scale-110 smooth-transition shadow-sm">
+                            <ImagePlus className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div className="text-center">
+                            <span className="block text-xs font-bold text-primary/70">Reference Photo</span>
+                            <span className="text-[8px] text-primary/30 uppercase tracking-widest">(Optional)</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
-                <CardFooter className="p-6 pt-0">
+                <CardFooter className="p-6 pt-0 border-t border-primary/5 mt-4">
                   <Button
                     disabled={analysisLoading || !selectedImage}
-                    className="w-full bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 h-14 rounded-2xl transition-all active:scale-[0.98] font-bold text-base text-white"
+                    className="w-full bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 h-14 rounded-2xl transition-all active:scale-[0.98] font-bold text-base text-white mt-4"
                     onClick={submitEvidence}
                   >
                     {analysisLoading ? (
-                      <><Loader2 className="h-5 w-5 animate-spin mr-3" /> SECURING FILES...</>
+                      <><Loader2 className="h-5 w-5 animate-spin mr-3" /> SECURING FORENSIC VAULT...</>
                     ) : (
-                      <><ShieldCheck className="h-5 w-5 mr-3" /> SUBMIT SECURE EVIDENCE</>
+                      <><ShieldCheck className="h-5 w-5 mr-3" /> SECURE INTAKE & ANALYZE</>
                     )}
                   </Button>
                 </CardFooter>
@@ -485,6 +609,21 @@ export default function ChatPage() {
         <div className="container max-w-3xl mx-auto flex flex-col gap-4">
           <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="flex w-full gap-3 items-center">
             <input type="file" hidden ref={fileInputRef} onChange={handleImageSelect} accept="image/*" />
+            <input
+              type="file"
+              hidden
+              ref={ref => {
+                // We need a separate ref for the original image upload
+                if (ref) (window as any).originalFileInputRef = ref;
+              }}
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const file = e.target.files[0]
+                  setSelectedOriginalImage({ file, preview: URL.createObjectURL(file) })
+                }
+              }}
+              accept="image/*"
+            />
             <Button
               type="button"
               variant="ghost"
