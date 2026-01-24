@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  reports      Report[]
+}
+
+model Report {
+  id            String          @id @default(uuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id])
+  description   String
+  status        ReportStatus    @default(DRAFT)
+  createdAt     DateTime        @default(now())
+  mediaEvidence MediaEvidence[]
+  aiAnalysis    AIAnalysis?
+}
+
+model MediaEvidence {
+  id        String   @id @default(uuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id])
+  filePath  String
+  fileHash  String
+  fileType  MediaType
+  uploadedAt DateTime @default(now())
+}
+
+model AIAnalysis {
+  id              String   @id @default(uuid())
+  reportId        String   @unique
+  report          Report   @relation(fields: [reportId], references: [id])
+  analysisText    String
+  confidenceScore Float
+  createdAt       DateTime @default(now())
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+  RESOLVED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}

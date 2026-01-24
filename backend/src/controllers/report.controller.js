@@ -1,0 +1,60 @@
+import { prisma } from '../config/db.js';
+import Joi from 'joi';
+
+const createReportSchema = Joi.object({
+    description: Joi.string().required(),
+});
+
+export const createReport = async (req, res) => {
+    try {
+        const { error } = createReportSchema.validate(req.body);
+        if (error) return res.status(400).json({ error: error.details[0].message });
+
+        const { description } = req.body;
+        const userId = req.user.id;
+
+        const report = await prisma.report.create({
+            data: {
+                userId,
+                description,
+                status: 'DRAFT',
+            },
+        });
+
+        res.status(201).json(report);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+export const getMyReports = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const reports = await prisma.report.findMany({
+            where: { userId },
+            include: {
+                mediaEvidence: true,
+                aiAnalysis: true,
+            },
+        });
+        res.json(reports);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+export const submitReport = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const report = await prisma.report.update({
+            where: { id },
+            data: { status: 'SUBMITTED' }
+        });
+        res.json(report);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+}
