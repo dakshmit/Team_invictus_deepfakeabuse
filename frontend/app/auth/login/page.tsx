@@ -37,7 +37,8 @@ export default function EmailLoginPage() {
             }
 
             if (isRegister) {
-                await auth.register(formData);
+                const { name, email, password } = formData;
+                await auth.register({ name, email, password });
                 setIsVerifying(true);
                 alert("Registration initiated. Please enter the OTP sent to your email.");
             } else {
@@ -50,7 +51,12 @@ export default function EmailLoginPage() {
 
         } catch (error: any) {
             console.error("Auth Error", error);
-            alert(error.response?.data?.error || "Authentication failed");
+            if (error.response?.status === 403) {
+                setIsVerifying(true);
+                alert(error.response?.data?.error || "Please verify your email.");
+            } else {
+                alert(error.response?.data?.error || "Authentication failed");
+            }
         } finally {
             setLoading(false)
         }

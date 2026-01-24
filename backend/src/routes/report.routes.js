@@ -1,5 +1,5 @@
 import express from 'express';
-import { createReport, getMyReports, submitReport, getReportById } from '../controllers/report.controller.js';
+import { createReport, getMyReports, submitReport, getReportById, downloadComplaint } from '../controllers/report.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -62,6 +62,7 @@ router.get('/', protect, getMyReports);
  *         description: Report submitted
  */
 router.get('/:id', protect, getReportById);
+router.get('/:id/download', protect, downloadComplaint);
 router.put('/:id/submit', protect, submitReport);
 
 export default router;

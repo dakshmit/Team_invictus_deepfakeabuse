@@ -1,5 +1,6 @@
 import { prisma } from '../config/db.js';
 import Joi from 'joi';
+import { generateComplaintPDF } from '../services/pdf.service.js';
 
 const createReportSchema = Joi.object({
     description: Joi.string().required(),
@@ -73,5 +74,18 @@ export const getReportById = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error' });
+    }
+};
+export const downloadComplaint = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const pdfBuffer = await generateComplaintPDF(id);
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=complaint-${id}.pdf`);
+        res.send(pdfBuffer);
+    } catch (error) {
+        console.error("PDF Generation Error:", error);
+        res.status(500).json({ error: "Failed to generate complaint PDF" });
     }
 };
