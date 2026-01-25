@@ -45,6 +45,7 @@ export const uploadSecureEvidence = async (req, res) => {
                 filePath: filePath,
                 fileHash: integrityHash,
                 fileType: mimeType.includes('video') ? 'VIDEO' : 'IMAGE',
+                encryptionIv: iv, // Save the IV for decryption
                 description: description || null,
                 metadata: req.body.metadata ? JSON.stringify(req.body.metadata) : null,
             }
@@ -90,6 +91,7 @@ export const uploadMedia = async (req, res) => {
                 filePath: filePath,
                 fileHash: integrityHash,
                 fileType: req.file.mimetype.includes('video') ? 'VIDEO' : 'IMAGE',
+                encryptionIv: iv,
             }
         });
 

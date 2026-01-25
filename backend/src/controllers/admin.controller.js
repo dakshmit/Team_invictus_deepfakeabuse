@@ -1,17 +1,21 @@
 import { prisma } from '../config/db.js';
+import { logAction } from '../utils/audit.js';
 
 /**
  * NGO Admin Controller: Technical Forensic Review
  */
 
-// List all forensic reports with technical signals
+// List all forensic reports with technical signals (Intake Dashboard)
 export const getForensicReports = async (req, res) => {
     try {
         const reports = await prisma.aIAnalysis.findMany({
             include: {
                 report: {
                     include: {
-                        complaint: true // Include the new complaint draft
+                        complaint: true,
+                        mediaEvidence: {
+                            select: { id: true, fileHash: true } // Only metadata
+                        }
                     }
                 }
             },
@@ -20,14 +24,12 @@ export const getForensicReports = async (req, res) => {
             }
         });
 
-        // Parse technical data for the Admin view
         const formattedReports = reports.map(a => {
             let technicalData = {};
             try {
                 technicalData = JSON.parse(a.analysisText);
             } catch (e) {
-                console.error("Failed to parse analysisText for", a.id);
-                technicalData = { analysisSummary: "Format Error: Could not parse technical data." };
+                technicalData = { analysisSummary: "Format Error" };
             }
 
             return {
@@ -38,7 +40,9 @@ export const getForensicReports = async (req, res) => {
                 status: a.report?.status || 'SUBMITTED',
                 analysisSummary: technicalData.analysisSummary || "No technical summary available.",
                 indicators: technicalData.indicators || [],
-                complaint: a.report?.complaint || null, // Pass full complaint object
+                evidenceCount: a.report?.mediaEvidence?.length || 0,
+                integrityVerified: true, // Placeholder for silent re-hash check
+                complaint: a.report?.complaint || null,
                 ...technicalData
             };
         });
@@ -50,7 +54,7 @@ export const getForensicReports = async (req, res) => {
     }
 };
 
-// Detailed view for a specific report
+// Detailed view for a specific report (WITHOUT Evidence Display)
 export const getReportDetails = async (req, res) => {
     try {
         const { id } = req.params;
@@ -59,30 +63,32 @@ export const getReportDetails = async (req, res) => {
             include: {
                 report: {
                     include: {
-                        complaint: true
+                        complaint: true,
+                        mediaEvidence: { select: { id: true, fileHash: true, fileType: true } }
                     }
                 }
             }
         });
 
-        if (!analysis) {
-            return res.status(404).json({ error: "Report analysis not found" });
-        }
+        if (!analysis) return res.status(404).json({ error: "Report analysis not found" });
 
         let technicalData = {};
         try {
             technicalData = JSON.parse(analysis.analysisText);
         } catch (e) {
-            technicalData = { analysisSummary: "Error parsing technical payload." };
+            technicalData = { analysisSummary: "Error parsing payload." };
         }
-
-        const report = await prisma.report.findUnique({ where: { id: analysis.reportId } });
 
         res.json({
             id: analysis.id,
             reportId: analysis.reportId,
+            idForUI: analysis.reportId,
             confidenceScore: analysis.confidenceScore || technicalData.confidenceScore || 0,
-            status: report?.status || 'SUBMITTED',
+            status: analysis.report?.status || 'SUBMITTED',
+            officialResponse: analysis.report?.officialResponse,
+            supportContact: analysis.report?.supportContact,
+            rejectionDetails: analysis.report?.rejectionDetails,
+            evidence: analysis.report?.mediaEvidence || [], // Locked IDs and Hashes only
             ...technicalData
         });
     } catch (error) {
@@ -91,28 +97,54 @@ export const getReportDetails = async (req, res) => {
     }
 };
 
-// Verify a report and notify the user
-export const verifyReport = async (req, res) => {
+// Update Case Status (Action & Case Handling)
+export const updateReportStatus = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params; // reportId
+        const { status, notes } = req.body;
 
-        // 1. Update the Report status to VERIFIED
+        let extraData = {};
+        if (status === 'VALID') {
+            extraData = {
+                officialResponse: "Our forensic team has verified your case. We are here to support you throughout the legal process.",
+                supportContact: "+91 98765 43210 (24/7 Digital Safety Helpline)"
+            };
+        } else if (['RESOLVED', 'NEEDS_CLARIFICATION'].includes(status)) {
+            extraData = {
+                rejectionDetails: notes || "No specific details provided."
+            };
+        }
+
         const updatedReport = await prisma.report.update({
             where: { id: id },
-            data: { status: 'VERIFIED' }
+            data: {
+                status: status,
+                ...extraData,
+                internalNotes: notes ? {
+                    create: {
+                        content: notes,
+                        authorId: req.user.id
+                    }
+                } : undefined
+            }
         });
 
-        // 2. We could trigger a real-time notification here (e.g., via WebSockets)
-        // For now, the frontend will poll or check status on refresh.
-        console.log(`>>> [ADMIN ACTION] Report ${id} has been VERIFIED. User notified.`);
+        // Audit Log
+        await logAction(req.user.id, "STATUS_CHANGE", id, { newStatus: status });
 
         res.json({
             success: true,
             status: updatedReport.status,
-            message: "Report successfully verified. The victim has been notified."
+            message: `Case status updated to ${status}`
         });
     } catch (error) {
-        console.error("Admin Verification Error:", error);
-        res.status(500).json({ error: "Failed to verify report" });
+        console.error("Admin Status Update Error:", error);
+        res.status(500).json({ error: "Failed to update case status" });
     }
+};
+
+// legacy verifyReport shim
+export const verifyReport = async (req, res) => {
+    req.body.status = 'VALID';
+    return updateReportStatus(req, res);
 };

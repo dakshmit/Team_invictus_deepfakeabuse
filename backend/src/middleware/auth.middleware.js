@@ -21,3 +21,13 @@ export function protect(req, res, next) {
     return res.status(401).json({ error: "Invalid or expired token. Please log in again." });
   }
 }
+
+export function restrictTo(...roles) {
+  return (req, res, next) => {
+    // Roles are passed in the JWT usually, ensure req.user has it
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ error: "Access Denied: You do not have permission to perform this action." });
+    }
+    next();
+  };
+}

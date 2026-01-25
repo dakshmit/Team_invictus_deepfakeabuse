@@ -28,8 +28,34 @@ model Report {
   createdAt     DateTime        @default(now())
   aiAnalysis    AIAnalysis?
   complaint     Complaint?
-  mediaEvidence MediaEvidence[]
-  user          User            @relation(fields: [userId], references: [id])
+  mediaEvidence    MediaEvidence[]
+  internalNotes    CaseNote[]
+  auditLogs        AuditLog[]
+  user             User            @relation(fields: [userId], references: [id])
+  
+  // New NGO->User Communication Fields
+  officialResponse String?         // Verification message (e.g., "We will help you...")
+  supportContact   String?         // NGO Contact Number
+  rejectionDetails String?         // Why it was rejected
+}
+
+model CaseNote {
+  id        String   @id @default(uuid())
+  reportId  String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  report    Report   @relation(fields: [reportId], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  reportId   String?
+  userId     String
+  action     String   // e.g., "LOGIN", "VIEW_EVIDENCE", "STATUS_CHANGE"
+  details    String?
+  timestamp  DateTime @default(now())
+  report     Report?  @relation(fields: [reportId], references: [id])
 }
 
 model Complaint {
@@ -43,15 +69,16 @@ model Complaint {
 }
 
 model MediaEvidence {
-  id          String    @id @default(uuid())
-  reportId    String?
-  filePath    String
-  fileHash    String
-  fileType    MediaType
-  uploadedAt  DateTime  @default(now())
-  description String?
-  metadata    String?
-  report      Report?   @relation(fields: [reportId], references: [id])
+  id           String    @id @default(uuid())
+  reportId     String?
+  filePath     String
+  fileHash     String
+  fileType     MediaType
+  encryptionIv String?   // Added for secure decryption
+  uploadedAt   DateTime  @default(now())
+  description  String?
+  metadata     String?
+  report       Report?   @relation(fields: [reportId], references: [id])
 }
 
 model AIAnalysis {
@@ -66,12 +93,18 @@ model AIAnalysis {
 enum Role {
   USER
   ADMIN
+  NGO_ADMIN
+  CASE_OFFICER
 }
 
 enum ReportStatus {
   DRAFT
   SUBMITTED
+  UNDER_REVIEW
   VERIFIED
+  VALID
+  NEEDS_CLARIFICATION
+  ESCALATED
   RESOLVED
 }
 

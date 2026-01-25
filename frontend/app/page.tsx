@@ -1,11 +1,26 @@
 "use client"
 
 import Link from "next/link"
-import { Shield, Lock, ArrowRight, Heart, Sparkles, Eye, ShieldCheck, MessageCircleHeart, Users, Zap } from "lucide-react"
+import { useState, useEffect } from "react"
+import axios from "axios"
+import { Shield, Lock, ArrowRight, Heart, Sparkles, Eye, ShieldCheck, MessageCircleHeart, Users, Zap, Bell, Phone, Info, AlertTriangle, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardTitle } from "@/components/ui/card"
+import { Card, CardTitle, CardContent, CardHeader, CardDescription } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 
 export default function LandingPage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const router = useRouter()
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (token) {
+      setIsLoggedIn(true)
+    }
+  }, [])
+
   return (
     <div className="flex min-h-screen flex-col bg-background font-sans overflow-x-hidden">
       {/* Dynamic Background Elements */}
@@ -23,16 +38,32 @@ export default function LandingPage() {
           <span className="font-heading font-extrabold text-xl tracking-tight text-primary uppercase">Digital Dignity</span>
         </Link>
         <nav className="flex gap-6 items-center">
-          <Link className="hidden sm:block text-xs font-bold text-primary/60 hover:text-primary transition-colors tracking-widest" href="/auth/login">
-            SIGN IN
-          </Link>
-          <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold h-10 px-6 rounded-xl shadow-md">
-            <Link href="/auth">GET STARTED</Link>
-          </Button>
+          {isLoggedIn ? (
+            <>
+              <Link className="hidden sm:block text-xs font-bold text-primary/60 hover:text-primary transition-colors tracking-widest" href="/dashboard">
+                DASHBOARD
+              </Link>
+              <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold h-10 px-6 rounded-xl shadow-md gap-2">
+                <Link href="/chat">
+                  <MessageCircleHeart className="h-4 w-4" /> TALK TO SAKHI
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link className="hidden sm:block text-xs font-bold text-primary/60 hover:text-primary transition-colors tracking-widest" href="/auth/login">
+                SIGN IN
+              </Link>
+              <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold h-10 px-6 rounded-xl shadow-md">
+                <Link href="/auth">GET STARTED</Link>
+              </Button>
+            </>
+          )}
         </nav>
       </header>
 
       <main className="flex-1 relative z-10">
+
         {/* HERO SECTION: Involvement focused */}
         <section className="relative pt-20 pb-16 lg:pt-32 lg:pb-24 px-6 md:px-12">
           <div className="container mx-auto grid lg:grid-cols-2 gap-16 items-center">
@@ -56,7 +87,7 @@ export default function LandingPage() {
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="h-16 px-10 rounded-2xl text-base font-bold border-primary/20 text-primary hover:bg-primary/5 transition-all" asChild>
-                  <Link href="/auth">LEARN MORE</Link>
+                  <Link href="/auth/login">LOGIN</Link>
                 </Button>
               </div>
             </div>

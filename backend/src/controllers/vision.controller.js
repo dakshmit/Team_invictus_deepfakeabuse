@@ -60,7 +60,27 @@ export const detailedAnalysis = async (req, res) => {
         if (!morphedBase64) return res.status(400).json({ error: "No image data for detailed analysis" });
 
         console.log(`[FORENSIC DEBUG] Starting analysis for Report: ${reportId}`);
-        const analysisData = await analyzeArtifactsWithGemini(visionModel, morphedBase64, mimeType, originalBase64);
+
+        // --- NEW: Fetch Security Metadata ---
+        let securityMetadata = {};
+        if (reportId) {
+            const reportData = await prisma.report.findUnique({
+                where: { id: reportId },
+                include: {
+                    user: { select: { name: true, email: true } },
+                    mediaEvidence: { select: { fileHash: true, fileType: true } }
+                }
+            });
+            if (reportData) {
+                securityMetadata = {
+                    userName: reportData.user?.name,
+                    userEmail: reportData.user?.email,
+                    evidenceHashes: reportData.mediaEvidence.map(e => e.fileHash)
+                };
+            }
+        }
+
+        const analysisData = await analyzeArtifactsWithGemini(visionModel, morphedBase64, mimeType, originalBase64, securityMetadata);
         console.log(`[FORENSIC DEBUG] RAW ANALYTICS FROM AI: ${JSON.stringify(analysisData)}`);
 
         // Multi-Signal Confidence Mapping
