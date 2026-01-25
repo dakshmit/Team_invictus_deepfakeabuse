@@ -26,10 +26,20 @@ export const generateHash = (data) => {
     return crypto.createHash('sha256').update(data).digest('hex');
 };
 
-/**
- * Securely hashes metadata keys to prevent leaking user specifics in logs/db
- */
+// Securely hashes metadata keys to prevent leaking user specifics in logs/db
 export const hashMetadata = (metadata) => {
     const stringified = JSON.stringify(metadata);
     return generateHash(stringified);
+};
+
+/**
+ * Decrypts data using AES-256-CBC
+ */
+export const decryptBuffer = (encryptedDataHex, ivHex) => {
+    const key = crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
+    const iv = Buffer.from(ivHex, 'hex');
+    const encryptedText = Buffer.from(encryptedDataHex, 'hex');
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    const decrypted = Buffer.concat([decipher.update(encryptedText), decipher.final()]);
+    return decrypted;
 };

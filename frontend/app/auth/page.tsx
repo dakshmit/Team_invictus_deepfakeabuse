@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { auth } from "@/lib/api"
 import { useRouter } from 'next/navigation'
@@ -18,7 +19,7 @@ export default function LoginPage() {
       const { token, user } = res.data;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
-      router.push('/chat');
+      router.push('/dashboard');
     } catch (error) {
       console.error("Login Failed", error);
     }

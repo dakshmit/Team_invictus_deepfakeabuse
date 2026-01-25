@@ -63,6 +63,7 @@ router.get('/', protect, getMyReports);
  */
 router.get('/:id', protect, getReportById);
 router.get('/:id/download', protect, downloadComplaint);
+router.get('/:id/complaint-download', protect, downloadComplaint); // Alias for forensic portal
 router.post('/:id/complaint-document', protect, uploadComplaintDocument);
 router.get('/:id/complaint-document', protect, downloadSubmittedComplaint);
 router.put('/:id/submit', protect, submitReport);

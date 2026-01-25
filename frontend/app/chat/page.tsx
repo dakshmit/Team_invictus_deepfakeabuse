@@ -296,8 +296,13 @@ export default function ChatPage() {
         setIsSubmittedToNGO(true);
         setMessages(prev => [...prev, {
           role: "model",
-          parts: "✅ **Success!** Your complaint document has been securely submitted to our NGO partners. A professional will review it and guide you on the next steps shortly."
+          parts: "✅ **Success!** Your complaint document has been securely submitted to our NGO partners. Redirecting you to your dashboard to track updates..."
         }]);
+
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 3000);
       };
     } catch (error) {
       console.error("NGO Submission failed", error);

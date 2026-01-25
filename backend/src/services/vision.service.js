@@ -58,7 +58,7 @@ export const analyzeArtifacts = async (metadata) => {
  * Detailed Artifact Analysis using Gemini Vision API
  * This serves as the core intelligence layer for forensics.
  */
-export const analyzeArtifactsWithGemini = async (model, morphedBase64, mimeType, originalBase64 = null) => {
+export const analyzeArtifactsWithGemini = async (model, morphedBase64, mimeType, originalBase64 = null, securityMetadata = {}) => {
     console.log(`[SERVICE DEBUG] Calling Gemini with ${originalBase64 ? 'TWO' : 'ONE'} images.`);
     let prompt = `
         You are a Specialized Forensic Image Authenticity Expert. 
@@ -95,6 +95,17 @@ export const analyzeArtifactsWithGemini = async (model, morphedBase64, mimeType,
     prompt += `
         Provide a detailed technical analysis and assign a risk level (Low, Medium, High).
     `;
+
+    // --- NEW: Security Context for Complaint Draft ---
+    if (securityMetadata && Object.keys(securityMetadata).length > 0) {
+        prompt += `
+        COMPLAINT DRAFT SECURITY REQUIREMENTS:
+        - The "complaintDraft" MUST include the following security metadata for chain-of-custody verification:
+            - Submitter Identity: ${securityMetadata.userName || 'Anonymous'} (${securityMetadata.userEmail || 'Protected'})
+            - Digital Integrity Keys (Evidence Hashes): ${securityMetadata.evidenceHashes?.join(', ') || 'N/A'}
+            - Evidence Encryption Status: All visual evidence is currently AES-256 encrypted in the Digital Dignity Forensic Vault.
+        `;
+    }
 
     // Ensure the last part is the format instruction
     parts[0].text += `\n\nProvide the response strictly in the JSON format defined in your instructions. If you cannot analyze due to safety, set "safetyRefusal": true.`;

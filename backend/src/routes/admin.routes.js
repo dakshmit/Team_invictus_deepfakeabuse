@@ -1,11 +1,25 @@
 import express from 'express';
-import { getForensicReports, getReportDetails, verifyReport } from '../controllers/admin.controller.js';
+import { getForensicReports, getReportDetails, updateReportStatus } from '../controllers/admin.controller.js';
+import { streamEvidence, verifyEvidenceIntegrity } from '../controllers/evidence.controller.js';
+import { protect, restrictTo } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// NGO-only endpoints for technical forensic review
+// Middleware: All admin/NGO routes require login and specialized roles
+router.use(protect);
+router.use(restrictTo('ADMIN', 'NGO_ADMIN', 'CASE_OFFICER'));
+
+// --- Intake Dashboard ---
 router.get('/forensics', getForensicReports);
+
+// --- Complaint Detail View ---
 router.get('/forensics/:id', getReportDetails);
-router.post('/forensics/:id/verify', verifyReport);
+
+// --- Action & Case Handling ---
+router.put('/forensics/:id/status', updateReportStatus);
+
+// --- Secure Evidence Access ---
+router.get('/evidence/:id/view', streamEvidence);
+router.get('/evidence/:id/integrity', verifyEvidenceIntegrity);
 
 export default router;

@@ -114,7 +114,9 @@ export const generateComplaintPDF = async (reportId) => {
         doc.moveDown(0.5);
         doc.fontSize(11).font('Helvetica').fillColor(accentColor);
         doc.text('• Image(s): Suspected deepfake / morphed visuals');
-        doc.text(`• Digital Hash (SHA-256): ${report.mediaEvidence[0]?.fileHash || 'N/A'}`);
+        doc.text(`• Digital Hash (SHA-256/Integrity Key): ${report.mediaEvidence[0]?.fileHash || 'N/A'}`);
+        doc.text(`• Evidence Storage: AES-256 Encrypted in Digital Dignity Forensic Vault`);
+        doc.text(`• Submitter Verified: ${report.user?.name || 'Anonymous'} (${report.user?.email || 'Protected'})`);
         doc.moveDown(0.5);
         doc.font('Helvetica-Bold').text('AI Analysis Summary:');
         const aiData = report.aiAnalysis?.analysisText ? JSON.parse(report.aiAnalysis.analysisText) : {};
@@ -122,7 +124,7 @@ export const generateComplaintPDF = async (reportId) => {
             doc.font('Helvetica').text(`- ${ind}`);
         });
         doc.moveDown(0.3);
-        doc.font('Helvetica-Oblique').text('All evidence has been preserved using cryptographic hashing to maintain chain-of-custody integrity.');
+        doc.font('Helvetica-Oblique').text('All evidence has been preserved using cryptographic hashing and industry-standard encryption to maintain chain-of-custody integrity.');
         doc.moveDown(1.5);
 
         // --- 8. SUSPECTED OFFENDER ---

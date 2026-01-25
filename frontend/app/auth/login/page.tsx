@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Shield, ArrowLeft, Mail, Lock, User } from "lucide-react"
@@ -32,7 +32,7 @@ export default function EmailLoginPage() {
                 const { token, user } = res.data;
                 localStorage.setItem('token', token);
                 localStorage.setItem('user', JSON.stringify(user));
-                router.push('/chat');
+                router.push('/dashboard');
                 return;
             }
 
@@ -46,7 +46,7 @@ export default function EmailLoginPage() {
                 const { token, user } = res.data;
                 localStorage.setItem('token', token);
                 localStorage.setItem('user', JSON.stringify(user));
-                router.push('/chat');
+                router.push('/dashboard');
             }
 
         } catch (error: any) {

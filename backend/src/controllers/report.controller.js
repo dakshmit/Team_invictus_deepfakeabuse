@@ -69,10 +69,16 @@ export const getReportById = async (req, res) => {
             where: { id },
             include: {
                 aiAnalysis: true,
+                complaint: true, // Also include complaint details
             },
         });
         if (!report) return res.status(404).json({ error: 'Report not found' });
-        res.json(report);
+
+        // Return structured data including feedback
+        res.json({
+            ...report,
+            // (Feedback fields are already on report top level due to schema update)
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error' });
